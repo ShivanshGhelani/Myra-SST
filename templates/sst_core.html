@@ -1,0 +1,3089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Recognition - Redesigned</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Add Recorder.js library for proper WAV recording -->
+    <script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+    <style>
+        :root {
+            --primary: #6d28d9;
+            --secondary: #4f46e5;
+            --accent: #10b981;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Back Button Style */
+        .back-button {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            width: 40px;
+            height: 40px;
+            background: rgba(109, 40, 217, 0.15);
+            border: none;
+            border-radius: 50%;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            text-decoration: none;
+            overflow: hidden;
+        }
+
+        .back-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: conic-gradient(
+                from 0deg at 50% 50%,
+                transparent,
+                var(--primary)
+            );
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.6s ease;
+            animation: rotate 4s linear infinite;
+            transform: scale(1.5);
+        }
+
+        .back-button i {
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, var(--text), rgba(255, 255, 255, 0.7));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-button:hover {
+            background: rgba(109, 40, 217, 0.25);
+            transform: scale(1.1);
+        }
+
+        .back-button:hover::before {
+            opacity: 0.2;
+            transform: scale(1);
+        }
+
+        .back-button:hover i {
+            transform: translateX(-2px);
+            background: linear-gradient(135deg, #fff, var(--text));
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .back-button:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg) scale(1.5); }
+            to { transform: rotate(360deg) scale(1.5); }
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--primary);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        /* Enhanced AI-themed background */
+        .ai-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -2;
+        }
+        
+        .ai-circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.05;
+            filter: blur(40px);
+        }
+        
+        .ai-circle:nth-child(1) {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--primary), transparent 70%);
+            top: -100px;
+            right: -100px;
+            animation: pulse-slow 15s infinite alternate;
+        }
+        
+        .ai-circle:nth-child(2) {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, var(--accent), transparent 70%);
+            bottom: -100px;
+            left: -100px;
+            animation: pulse-slow 12s infinite alternate-reverse;
+        }
+        
+        .ai-circle:nth-child(3) {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, var(--secondary), transparent 70%);
+            bottom: 20%;
+            right: 10%;
+            animation: pulse-slow 10s infinite alternate;
+        }
+        
+        @keyframes pulse-slow {
+            0% {
+                transform: scale(1);
+                opacity: 0.03;
+            }
+            100% {
+                transform: scale(1.2);
+                opacity: 0.08;
+            }
+        }
+        
+        /* Neural network pattern */
+        .neural-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.2;
+            z-index: -1;
+        }
+        
+        /* Circuit board pattern */
+        .circuit-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to right, rgba(79, 70, 229, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px, 30px 30px, 150px 150px, 150px 150px;
+            z-index: -1;
+        }
+        
+        /* Background grid and floating dots */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1;
+        }
+        
+        .floating-dots {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .dot {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.08;
+            background: rgba(255, 255, 255, 0.8);
+            animation: float-animation 20s infinite linear;
+        }
+        
+        @keyframes float-animation {
+            0% {
+                transform: translateY(100vh) translateX(var(--x-distance, 0));
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.08;
+            }
+            90% {
+                opacity: 0.08;
+            }
+            100% {
+                transform: translateY(-20px) translateX(calc(var(--x-distance, 0) + 20px));
+                opacity: 0;
+            }
+        }
+        
+        /* Data stream animation */
+        .data-stream {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .data-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            animation: data-flow 8s linear infinite;
+        }
+        
+        @keyframes data-flow {
+            0% {
+                opacity: 0;
+                width: 0;
+            }
+            10% {
+                opacity: 0.05;
+            }
+            80% {
+                opacity: 0.05;
+            }
+            100% {
+                opacity: 0;
+                width: 100%;
+            }
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            width: 90%;
+            max-width: 1200px;
+            height: 85vh;
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(15, 23, 42, 0.7);
+            padding: 24px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+        
+        .logo-icon i {
+            font-size: 20px;
+            color: white;
+        }
+        
+        .app-name {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .app-name h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .app-name span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .input-methods {
+            flex: 1;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 8px;
+            font-size: 16px;
+            color: var(--accent);
+        }
+
+        .input-option {
+            background: rgba(51, 65, 85, 0.4);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .input-option:hover {
+            background: rgba(51, 65, 85, 0.6);
+            transform: translateY(-2px);
+        }
+        
+        .input-option.active {
+            background: rgba(109, 40, 217, 0.2);
+            border: 1px solid rgba(109, 40, 217, 0.4);
+        }
+        
+        .input-option-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .input-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+        
+        .input-icon.mic {
+            background: rgba(239, 68, 68, 0.2);
+        }
+        
+        .input-icon.mic i {
+            color: var(--danger);
+        }
+        
+        .input-icon.file i {
+            color: var(--secondary);
+        }
+        
+        .input-option-title h3 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .input-option-title p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .settings-section {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .api-selector {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .api-selector label {
+            font-size: 14px;
+            margin-right: 10px;
+            flex: 1;
+        }
+        
+        .custom-select {
+            position: relative;
+            width: 140px;
+        }
+        
+        .select-styled {
+            background: rgba(51, 65, 85, 0.4);
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .select-styled:after {
+            content: '\f107';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            margin-left: 8px;
+        }
+
+        /* Main content */
+        .main-content {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .page-title h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .page-title p {
+            font-size: 14px;
+            color: var (--text-secondary);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .primary-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+        
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(109, 40, 217, 0.3);
+        }
+        
+        .secondary-btn {
+            background: rgba(51, 65, 85, 0.4);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .secondary-btn:hover {
+            background: rgba(51, 65, 85, 0.6);
+            transform: translateY(-2px);
+        }        /* Mobile layout organization:
+           1. Input methods in sidebar
+           2. Recording panel
+           3. Convert and Clear buttons below recording
+           4. Results panel (output) at bottom
+        */
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .recording-panel {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 16px;
+            padding: 24px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .recording-visualizer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0 24px;
+            gap: 3px;
+        }
+        
+        .visualizer-bar {
+            width: 4px;
+            background: linear-gradient(to top, var(--primary), var(--accent));
+            border-radius: 2px;
+            height: 10px;
+            transition: height 0.2s ease;
+        }
+        
+        .record-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+        }
+        
+        .record-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+        
+        .record-btn i {
+            font-size: 24px;
+            color: white;
+        }
+        
+        .record-btn.recording {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        
+        .record-status {
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+        }
+        
+        .status-indicator.recording {
+            background: var(--danger);
+        }
+
+        .results-panel {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .results-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .results-title {
+            font-size: 18px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .results-title i {
+            color: var(--accent);
+        }
+        
+        .results-controls {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .control-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(51, 65, 85, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(51, 65, 85, 0.6);
+        }
+        
+        .results-content {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+            /* Add min-height for better visibility */
+            min-height: 120px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .results-empty {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+        
+        .results-empty i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .results-empty p {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .results-empty span {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-top: 8px;
+            text-align: center;
+            max-width: 300px;
+        }
+        
+        .transcription-result {
+            background: rgba(51, 65, 85, 0.85); /* More solid for contrast */
+            border-radius: 12px;
+            padding: 20px 18px;
+            line-height: 1.7;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            font-size: 1.08rem;
+            color: #fff;
+            margin-top: 10px;
+            word-break: break-word;
+            white-space: pre-line;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .meta-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .service-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .service-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(79, 70, 229, 0.2);
+            font-size: 12px;
+            font-weight: 500;
+            color: var (--secondary);
+        }
+        
+        .confidence-info {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .confidence-meter {
+            width: 100px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .confidence-bar {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            border-radius: 3px;
+            width: 0;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+            display: none;
+        }
+        
+        .loading-text {
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 20px;
+        }
+        
+        /* Voice wave animation */
+        .voice-wave-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 80px;
+            gap: 4px;
+        }
+        
+        .voice-wave-bar {
+            width: 6px;
+            background: linear-gradient(to top, var(--primary), var(--accent));
+            border-radius: 3px;
+            margin: 0 2px;
+            animation: voice-wave-animation 1s infinite ease-in-out;
+        }
+        
+        .voice-wave-bar:nth-child(1) { animation-delay: -0.9s; }
+        .voice-wave-bar:nth-child(2) { animation-delay: -0.8s; }
+        .voice-wave-bar:nth-child(3) { animation-delay: -0.7s; }
+        .voice-wave-bar:nth-child(4) { animation-delay: -0.6s; }
+        .voice-wave-bar:nth-child(5) { animation-delay: -0.5s; }
+        .voice-wave-bar:nth-child(6) { animation-delay: -0.4s; height: 40px; }
+        .voice-wave-bar:nth-child(7) { animation-delay: -0.3s; height: 60px; }
+        .voice-wave-bar:nth-child(8) { animation-delay: -0.2s; height: 80px; }
+        .voice-wave-bar:nth-child(9) { animation-delay: -0.1s; height: 60px; }
+        .voice-wave-bar:nth-child(10) { animation-delay: 0s; height: 40px; }
+        .voice-wave-bar:nth-child(11) { animation-delay: -0.5s; }
+        .voice-wave-bar:nth-child(12) { animation-delay: -0.6s; }
+        .voice-wave-bar:nth-child(13) { animation-delay: -0.7s; }
+        .voice-wave-bar:nth-child(14) { animation-delay: -0.8s; }
+        .voice-wave-bar:nth-child(15) { animation-delay: -0.9s; }
+        
+        @keyframes voice-wave-animation {
+            0% {
+                transform: scaleY(0.5);
+                opacity: 0.2;
+            }
+            20% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+            40% {
+                transform: scaleY(0.3);
+                opacity: 0.3;
+            }
+            60% {
+                transform: scaleY(0.75);
+                opacity: 0.7;
+            }
+            80% {
+                transform: scaleY(0.5);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scaleY(0.15);
+                opacity: 0.15;
+            }
+        }
+        
+        .loading-icon-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+            gap: 8px;
+            color: var(--accent);
+            font-weight: 500;
+        }
+        
+        .loading-icon-text i {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        
+        .error-alert {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fecaca;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .error-alert i {
+            color: var(--danger);
+            font-size: 18px;
+        }
+        
+        /* Custom audio controls - completely redesigned */
+        .audio-controls {
+            margin-top: 18px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .custom-audio-player {
+            width: 100%;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+        
+        .recording-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        
+        .recording-info i {
+            color: var(--primary);
+        }
+        
+        .recording-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .audio-visualization {
+            height: 60px;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .audio-spectrum {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 100%;
+            width: 100%;
+            padding: 0 10px;
+        }
+        
+        .spectrum-bar {
+            flex-grow: 1;
+            height: 30%;
+            background: linear-gradient(to top, var(--primary), var(--accent));
+            border-radius: 2px;
+            transition: height 0.2s ease;
+        }
+        
+        .player-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 4px;
+        }
+        
+        .progress-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+            min-width: 40px;
+        }
+        
+        .progress-bar-container {
+            flex-grow: 1;
+            height: 6px;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .progress-bar-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .progress-bar-fill {
+            position: absolute;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, var(--danger), var(--primary));
+            border-radius: 3px;
+            transition: width 0.1s linear;
+        }
+        
+        .progress-slider {
+            position: absolute;
+            width: 100%;
+            height: 20px;
+            top: -7px;
+            margin: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+        
+        .player-controls-new {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 6px;
+        }
+        
+        .player-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(51, 65, 85, 0.4);
+            color: var(--text);
+        }
+        
+        .player-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(51, 65, 85, 0.6);
+        }
+        
+        .play-btn {
+            background: var(--danger);
+            color: white;
+            width: 52px;
+            height: 52px;
+            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+        }
+        
+        .play-btn:hover {
+            background: var(--danger);
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .play-btn i {
+            font-size: 18px;
+        }
+        
+        .download-btn-new {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .download-btn-new:hover {
+            background: var(--accent);
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+        
+        .time-slider {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            appearance: none;
+            background: transparent;
+            margin: 0;
+            z-index: 3;
+            cursor: pointer;
+        }
+        
+        .time-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+            transition: all 0.2s ease;
+        }
+        
+        .time-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        .time-display {
+            font-size: 12px;
+            color: var(--text-secondary);
+            width: 50px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        
+        .record-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .record-action-btn {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 10px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        
+        .record-action-btn i {
+            font-size: 14px;
+        }
+        
+        .download-btn {
+            color: var(--accent);
+        }
+        
+        .download-btn:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .convert-btn {
+            color: var(--primary);
+        }
+        
+        .convert-btn:hover {
+            background: rgba(109, 40, 217, 0.1);
+            border-color: rgba(109, 40, 217, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* Media queries */
+        @media (max-width: 1200px) {
+            .app-container {
+                width: 98vw;
+                max-width: 98vw;
+            }
+        }
+        @media (max-width: 1024px) {
+            .app-container {
+                width: 100vw;
+                max-width: 100vw;
+                min-height: 100vh;
+            }
+            .sidebar {
+                padding: 12px;
+            }
+            .main-content {
+                padding: 12px;
+            }
+        }
+        @media (max-width: 900px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                height: auto;
+                min-height: 100vh;
+                width: 100vw;
+                max-width: 100vw;
+            }
+            .sidebar {
+                padding: 10px;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                min-width: 0;
+            }
+            .input-methods {
+                display: flex;
+                flex-direction: row;
+                gap: 10px;
+            }
+            .input-option {
+                flex: 1;
+                min-width: 120px;
+            }
+            .settings-section {
+                display: none;
+            }
+        }        /* Desktop/Mobile visibility classes */
+        .desktop-only {
+            display: flex;
+        }
+        
+        .mobile-only {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .desktop-only {
+                display: none !important;
+            }
+            
+            .mobile-only {
+                display: flex !important;
+            }
+            
+            .app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                height: auto;
+                min-height: 100vh;
+                width: 100vw;
+                max-width: 100vw;
+            }
+            .sidebar, .main-content {
+                padding: 8px;
+            }
+            .record-btn {
+                width: 60px;
+                height: 60px;
+            }
+            .record-btn i {
+                font-size: 18px;
+            }
+            .recording-panel {
+                height: 140px;
+            }
+            .player-controls-new {
+                gap: 6px;
+            }
+            .custom-audio-player {
+                padding: 8px;
+            }
+            /* Hide audio player in mobile layout */
+            .audio-controls {
+                display: none !important;
+            }
+        }        @media (max-width: 600px) {
+            html, body {
+                width: 100vw;
+                min-width: 0;
+                overflow-x: hidden;
+            }
+            .app-container {
+                width: 100vw;
+                max-width: 100vw;
+                min-height: 100vh;
+                border-radius: 0;
+                display: flex;
+                flex-direction: column;
+            }
+            /* Hide the desktop action buttons */
+            .main-actions {
+                display: none !important;
+            }/* Mobile sidebar with input methods */
+            .sidebar {
+                padding: 10px 12px;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                flex-shrink: 0;
+                height: auto;
+                display: flex;
+                flex-direction: column;
+                background: rgba(15, 23, 42, 0.85);
+                position: sticky;
+                top: 0;
+                z-index: 100;
+            }
+            
+            .app-logo {
+                margin-bottom: 8px;
+                padding-right: 40px; /* Make space for GitHub button */
+            }
+            
+            /* Mobile main content area - Simplified */
+            .main-content {
+                padding: 12px;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                overflow-y: auto;
+            }
+              /* Input methods moved to sidebar */
+            .input-methods {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+                margin-bottom: 8px;
+            }
+                .input-option {
+                width: 100%;
+                padding: 8px 10px;
+                border-radius: 10px;
+                display: flex;
+                justify-content: flex-start;
+                align-items: center;
+                background: rgba(51, 65, 85, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                transition: all 0.2s ease;
+                margin-bottom: 4px;
+            }
+            
+            .input-option.active {
+                background: rgba(79, 70, 229, 0.2);
+                border-color: rgba(79, 70, 229, 0.4);
+            }
+            
+            .input-option-header {
+                margin-bottom: 0;
+                display: flex;
+                align-items: center;
+                width: 100%;
+            }
+            
+            .input-option-title h3 {
+                font-size: 13px;
+                margin-bottom: 0;
+            }
+            
+            .input-option-title p {
+                display: none;
+            }              /* Simple recording panel with status */
+            .recording-panel {
+                height: auto;
+                padding: 15px;
+                width: 100%;
+                margin: 0 0 10px 0;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 12px;
+                border-radius: 12px;
+                background: rgba(30, 41, 59, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+            
+            .record-btn {
+                width: 60px;
+                height: 60px;
+                margin: 0;
+                flex-shrink: 0;
+                box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+            }
+            
+            .record-status {
+                margin-top: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: center;
+                gap: 6px;
+                font-size: 14px;
+            }
+            
+            .status-indicator {
+                width: 8px;
+                height: 8px;
+                margin: 0;
+            }
+              /* Visualizer inside recording panel */
+            .recording-visualizer {
+                width: 100%;
+                height: 30px;
+                padding: 0 10px;
+                background: rgba(15, 23, 42, 0.3);
+                border-radius: 8px;
+                overflow: hidden;
+                position: absolute;
+                bottom: 0;
+                left: 0;
+            }
+            
+            /* Action buttons below recording section */
+            .action-buttons-container {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+            
+            .mobile-action-btn {
+                flex: 1;
+                padding: 10px;
+                border-radius: 10px;
+                font-size: 13px;
+                font-weight: 500;
+                background: rgba(51, 65, 85, 0.5);
+                color: var(--text);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+            }
+            
+            .mobile-action-btn.convert {
+                background: rgba(79, 70, 229, 0.2);
+                border-color: rgba(79, 70, 229, 0.3);
+                color: #a5b4fc;
+            }
+              /* Improved header and action buttons */
+            .content-header {
+                margin-bottom: 16px;
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .page-title {
+                width: 100%;
+                text-align: center;
+                margin-bottom: 4px;
+            }
+            
+            .page-title h2 {
+                font-size: 22px;
+                color: white;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            }
+            
+            .page-title p {
+                font-size: 14px;
+                opacity: 0.85;
+            }
+            
+            .action-buttons {
+                width: 100%;
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+            }
+            
+            .action-btn {
+                justify-content: center;
+                padding: 12px 16px;
+                font-size: 14px;
+                border-radius: 12px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                flex: 1;
+                max-width: 160px;
+            }
+            
+            .primary-btn {
+                background: linear-gradient(135deg, #6366f1, #4f46e5);
+            }
+            
+            .secondary-btn {
+                background: rgba(51, 65, 85, 0.6);
+            }              /* Compact audio player for mobile */
+            .audio-controls {
+                margin: 0 0 12px 0;
+                width: 100%;
+            }
+            
+            .custom-audio-player {
+                padding: 10px;
+                border-radius: 10px;
+                background: rgba(30, 41, 59, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+            
+            .audio-visualization {
+                height: 30px;
+                margin: 5px 0;
+            }
+            
+            /* Compact player controls */
+            .player-controls-new {
+                justify-content: space-between;
+                padding: 5px 0 0 0;
+            }
+            
+            .player-btn {
+                width: 36px;
+                height: 36px;
+            }
+            
+            .play-btn {
+                width: 46px;
+                height: 46px;
+            }
+            
+            /* Player progress bar */
+            .player-progress {
+                margin-top: 5px;
+            }
+            
+            /* Compact player layout for mobile */
+            .mobile-player-row {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+            
+            .mobile-player-col {
+                flex: 1;
+            }
+              /* Results panel positioned at bottom */
+            .results-panel {
+                flex: 1;
+                margin-top: 0;
+                display: flex;
+                flex-direction: column;
+                min-height: 200px;
+                border-radius: 12px;
+                background: rgba(30, 41, 59, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+              .results-header {
+                padding: 12px 15px;
+                background: rgba(15, 23, 42, 0.4);
+                border-top-left-radius: 12px;
+                border-top-right-radius: 12px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+            
+            .results-title {
+                font-size: 16px;
+                font-weight: 600;
+            }
+            
+            .results-content {
+                padding: 16px;
+                max-height: none;
+                flex: 1;
+                overflow-y: auto;
+            }
+            
+            .transcription-result {
+                line-height: 1.6;
+                padding: 16px;
+                font-size: 16px;
+                background: rgba(51, 65, 85, 0.9);
+                border-radius: 14px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
+            
+            /* Hide desktop GitHub button and show mobile version */
+            .github-button.desktop-github {
+                display: none;
+            }
+            
+            .github-button.mobile-github {
+                display: flex;
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                width: 36px;
+                height: 36px;
+                margin: 0;
+            }
+            
+            /* Hide sidebar actions since we have main buttons visible */
+            .sidebar-actions {
+                display: none !important;
+            }
+              /* Hide the desktop main actions on mobile */
+            .main-actions.desktop-only {
+                display: none !important;
+            }
+        }        /* More compact layout for smaller phones */
+        @media (max-width: 400px) {
+            .sidebar, .main-content {
+                padding: 8px;
+            }
+            
+            /* More compact recording panel */
+            .recording-panel {
+                padding: 10px;
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+            
+            .record-btn {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .record-btn i {
+                font-size: 16px;
+            }
+            
+            /* Extremely compact input options */
+            .input-methods {
+                gap: 6px;
+            }
+            
+            .input-option {
+                padding: 6px 8px;
+            }
+            
+            .input-icon {
+                width: 28px;
+                height: 28px;
+                min-width: 28px;
+                margin-right: 8px;
+            }
+            
+            .input-option-title h3 {
+                font-size: 12px;
+            }
+            
+            /* Very compact action buttons */
+            .mobile-action-btn {
+                padding: 8px 5px;
+                font-size: 12px;
+            }
+            
+            /* Minimal results panel */
+            .results-panel {
+                margin-bottom: 15px;
+                min-height: 180px;
+            }
+            
+            .results-header {
+                padding: 8px 10px;
+            }
+            
+            .results-content {
+                padding: 8px;
+            }
+            
+            .page-title h2 {
+                font-size: 16px;
+                margin-bottom: 2px;
+            }
+            
+            .page-title p {
+                font-size: 11px;
+            }
+            
+            /* Ultra compact audio player */
+            .custom-audio-player {
+                padding: 8px;
+                gap: 6px;
+            }
+            
+            .audio-visualization {
+                height: 26px;
+            }
+            
+            .player-controls-new {
+                padding: 2px 0;
+            }
+            
+            .player-btn {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .play-btn {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .transcription-result {
+                padding: 10px;
+                font-size: 13px;
+            }
+            
+            /* Stack player in column for very small screens */
+            .mobile-player-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+        
+        /* Additional layout for very small screens */
+        @media (max-width: 350px) {
+            .sidebar {
+                padding: 8px 6px;
+            }
+            
+            .main-content {
+                padding: 8px 6px;
+            }
+            
+            .record-btn {
+                width: 52px;
+                height: 52px;
+            }
+            
+            .record-btn i {
+                font-size: 18px;
+            }
+            
+            .input-option-title h3 {
+                font-size: 13px;
+            }
+            
+            .recording-panel {
+                padding: 12px 10px;
+                gap: 10px;
+            }
+            
+            .sidebar-actions .action-btn {
+                font-size: 12px;
+                height: 42px;
+                padding: 8px 4px;
+                margin: 0 2px;
+            }
+            
+            .audio-controls {
+                margin-bottom: 12px;
+            }
+            
+            .custom-audio-player {
+                padding: 10px;
+                gap: 8px;
+            }
+            
+            .player-btn {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .play-btn {
+                width: 44px;
+                height: 44px;
+            }
+            
+            .page-title h2 {
+                font-size: 16px;
+            }
+            
+            .input-icon {
+                width: 28px;
+                height: 28px;
+                min-width: 28px;
+                margin-right: 10px;
+            }
+            
+            .results-header {
+                padding: 10px;
+            }
+            
+            .results-content {
+                padding: 10px;
+            }
+            
+            .transcription-result {
+                padding: 12px;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+        }
+          @media (max-height: 600px) and (orientation: landscape) {
+            html, body {
+                padding: 0;
+                width: 100vw;
+                min-width: 0;
+                overflow-x: hidden;
+            }
+            
+            .app-container {
+                grid-template-columns: 220px 1fr;
+                height: 100vh;
+                width: 100vw;
+                border-radius: 0;
+                border: none;
+            }
+            
+            .sidebar {
+                max-height: 100vh;
+                overflow-y: auto;
+                padding: 15px 10px;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+                background: rgba(15, 23, 42, 0.9);
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .app-logo {
+                margin-bottom: 15px;
+            }
+            
+            .app-logo .app-name h1 {
+                font-size: 16px;
+            }
+            
+            .content-wrapper {
+                gap: 10px;
+                padding: 10px 0;
+                flex-direction: row;
+                align-items: stretch;
+            }
+            
+            .recording-panel {
+                height: auto;
+                flex: 0 0 160px;
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding: 15px;
+            }
+            
+            .results-panel {
+                flex: 1;
+                margin: 0;
+                max-height: none;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .input-methods {
+                margin-bottom: 15px;
+            }
+            
+            .content-header {
+                margin-bottom: 10px;
+            }
+              /* Audio controls in landscape mode - hidden on mobile */
+            .audio-controls {
+                display: none !important;
+            }
+            
+            .custom-audio-player {
+                max-width: 700px;
+                margin: 0 auto;
+                border-radius: 12px;
+            }
+            
+            /* Mobile sidebar-actions in landscape */
+            .sidebar-actions {
+                margin-top: auto;
+                padding: 10px;
+            }
+        }
+          /* Simple landscape layout for mobile */
+        @media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+            .app-container {
+                grid-template-columns: 200px 1fr;
+            }
+            
+            .sidebar {
+                padding: 10px 8px;
+                overflow-y: auto;
+            }
+            
+            .audio-controls {
+                left: 200px;
+            }
+            
+            .recording-panel {
+                flex: 0 0 120px;
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            
+            .record-btn {
+                width: 46px;
+                height: 46px;
+            }
+            
+            .content-header {
+                margin-bottom: 5px;
+            }
+            
+            .page-title h2 {
+                font-size: 16px;
+            }
+            
+            .page-title p {
+                font-size: 12px;
+            }
+            
+            .input-option {
+                padding: 8px;
+                margin-bottom: 8px;
+            }
+            
+            .input-icon {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .input-option-title h3 {
+                font-size: 13px;
+            }
+        }
+        .github-button {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            width: 44px;
+            height: 44px;
+            background: rgba(16,185,129,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        
+        .github-button:hover {
+            background: rgba(16,185,129,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .github-button i {
+            font-size: 1.5rem;
+            color: #fff;
+        }
+        
+        .mobile-github {
+            display: none;
+            position: static;
+            margin: 0 auto 16px auto;
+            width: 40px;
+            height: 40px;
+            background: rgba(16,185,129,0.15);
+        }
+        
+        .sidebar-actions {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 10px;
+        }
+          /* Mobile optimizations */
+        @media (max-width: 600px) {
+            .github-button.desktop-github {
+                display: none !important;
+            }
+            
+            .github-button.mobile-github {
+                display: flex !important;
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                width: 36px;
+                height: 36px;
+                margin: 0;
+            }
+            
+            .main-actions {
+                display: none !important;
+            }
+            
+            .sidebar-actions {
+                display: flex !important;
+                margin-top: 12px;
+                background: rgba(30, 41, 59, 0.3);
+                border-radius: 10px;
+                padding: 12px;
+            }
+            
+            .sidebar-actions .action-btn {
+                margin-bottom: 5px;
+                padding: 10px 0;
+                min-height: 45px;
+            }
+                  /* Simple mobile layout */
+            .content-wrapper {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            /* Simplified sidebar for mobile */
+            .sidebar {
+                padding: 12px;
+                overflow-y: visible;
+                position: relative;
+                background: rgba(15, 23, 42, 0.8);
+            }
+            
+            .app-logo {
+                margin-bottom: 10px;
+                margin-right: 40px; /* Make space for GitHub button */
+            }
+            
+            .input-methods {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                gap: 10px;
+                width: 100%;
+            }
+            
+            .input-option {
+                padding: 12px;
+                margin-bottom: 0;
+                max-width: 160px;
+            }
+            
+            .input-option-header {
+                margin-bottom: 0;
+                flex: 1;
+            }
+            
+            .section-title {
+                font-size: 13px;
+                margin-bottom: 8px;
+                padding-left: 5px;
+            }
+              /* Simple mobile action buttons */
+            .sidebar-actions {
+                display: flex !important;
+                flex-direction: row !important;
+                margin-top: 12px;
+                background: rgba(30, 41, 59, 0.4);
+                border-radius: 12px;
+                padding: 8px;
+                border: 1px solid rgba(255,255,255,0.05);
+            }
+            
+            .sidebar-actions .action-btn {
+                flex: 1;
+                margin: 0 4px;
+                padding: 10px 0;
+                height: 42px;
+                font-size: 13px;
+                font-weight: 500;
+                border-radius: 8px;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            .sidebar-actions .secondary-btn {
+                background: rgba(51, 65, 85, 0.5);
+            }
+            
+            .sidebar-actions .primary-btn {
+                background: #4f46e5;
+            }
+              /* Simple recording panel */
+            .recording-panel {
+                height: 120px;
+                padding: 15px;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-around;
+                border-radius: 16px;
+                background: rgba(30, 41, 59, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                margin-bottom: 15px;
+            }
+            
+            .record-btn {
+                width: 64px;
+                height: 64px;
+                margin: 0;
+                box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+            }
+            
+            .record-status {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+                margin-top: 0;
+                font-size: 14px;
+            }
+            
+            .status-indicator {
+                width: 8px;
+                height: 8px;
+            }
+            
+            .recording-visualizer {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                height: 40px;
+                padding: 0 10px;
+                width: 100%;
+            }
+              /* Simple results panel */
+            .results-panel {
+                flex: 1;
+                min-height: 200px;
+                border-radius: 16px;
+                overflow: hidden;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                background: rgba(30, 41, 59, 0.5);
+                margin-bottom: 20px; /* Add space at the bottom */
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .results-header {
+                padding: 14px 16px;
+                background: rgba(15, 23, 42, 0.5);
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+            
+            .results-content {
+                padding: 16px;
+                flex: 1;
+                overflow-y: auto;
+            }
+              /* Simplified audio player for mobile */
+            .audio-controls {
+                margin: 0 0 15px;
+                width: 100%;
+            }
+            
+            .custom-audio-player {
+                padding: 12px;
+                gap: 10px;
+                border-radius: 12px;
+                background: rgba(30, 41, 59, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+            
+            .audio-visualization {
+                height: 36px;
+                border-radius: 8px;
+                background: rgba(15, 23, 42, 0.3);
+            }
+            
+            .player-progress {
+                margin-top: 6px;
+            }
+            
+            .player-controls-new {
+                justify-content: space-between;
+                padding: 4px 10px;
+                margin-top: 6px;
+            }
+              .transcription-result {
+                padding: 16px;
+                font-size: 16px;
+                line-height: 1.6;
+                background: rgba(51, 65, 85, 0.7);
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        }
+        
+        /* Even smaller screens */
+        @media (max-width: 400px) {
+            .recording-panel {
+                flex-direction: column;
+                height: auto;
+                padding: 8px;
+            }
+            
+            .record-btn {
+                margin-right: 0;
+                margin-bottom: 8px;
+                width: 50px;
+                height: 50px;
+            }
+            
+            .record-status {
+                align-items: center;
+            }
+            
+            .sidebar-actions .action-btn {
+                padding: 10px 3px;
+                min-height: 40px;
+            }
+            
+            .input-option {
+                padding: 6px;
+            }
+            
+            .input-icon {
+                width: 30px;
+                height: 30px;
+                min-width: 30px;
+            }
+            
+            .audio-controls {
+                margin-top: 5px;
+            }
+            
+            /* Completely flatten sidebar items */
+            .input-option-header {
+                justify-content: flex-start;
+            }
+            
+            .input-option-title h3 {
+                font-size: 11px;
+                margin-bottom: 2px;
+            }
+            
+            .input-option-title p {
+                font-size: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating dots container -->
+    <div class="floating-dots" id="floating-dots"></div>
+    
+    <!-- AI-themed background elements -->
+    <div class="ai-background">
+        <div class="ai-circle"></div>
+        <div class="ai-circle"></div>
+        <div class="ai-circle"></div>
+    </div>
+    <div class="neural-pattern"></div>
+    <div class="circuit-overlay"></div>
+    <div class="data-stream"></div>
+    <!-- Removed binary-rain div -->
+
+    <!-- GitHub Button (desktop/tablet) -->
+    <a href="https://github.com/ShivanshGhelani/Myra-SST.git" class="github-button desktop-github" target="_blank" title="View on GitHub">
+        <i class="fab fa-github"></i>
+    </a>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- GitHub Button (mobile) -->
+            <a href="https://github.com/ShivanshGhelani/Myra-SST.git" class="github-button mobile-github" target="_blank" title="View on GitHub">
+                <i class="fab fa-github"></i>
+            </a>
+            <div class="app-logo">
+                <div class="logo-icon">
+                    <i class="fas fa-wave-square"></i>
+                </div>
+                <div class="app-name">
+                    <h1>Speech Recognition</h1>
+                    <span>Powered by AI</span>
+                </div>
+            </div>
+            
+            <div class="input-methods">
+                <div class="section-title">
+                    <i class="fas fa-microchip"></i>
+                    Input Methods
+                </div>
+                
+                <div class="input-option active" id="record-option">
+                    <div class="input-option-header">
+                        <div class="input-icon mic">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                        <div class="input-option-title">
+                            <h3>Record Audio</h3>
+                            <p>Use your microphone to record speech</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-option" id="upload-option">
+                    <div class="input-option-header">
+                        <div class="input-icon file">
+                            <i class="fas fa-file-audio"></i>
+                        </div>
+                        <div class="input-option-title">
+                            <h3>Upload Audio</h3>
+                            <p>Use existing audio files</p>
+                        </div>
+                    </div>
+                    <input type="file" id="audio-file" accept="audio/*" style="display: none;">                </div>
+                  <!-- Audio player is in the sidebar (initially hidden) -->
+                <div class="audio-controls" id="audio-controls" style="display: none;">
+                    <!-- Hidden native audio element for handling audio playback -->
+                    <audio id="audio-player" style="display: none;"></audio>
+                    
+                    <div class="custom-audio-player">
+                        <div class="player-header">
+                            <div class="recording-info">
+                                <i class="fas fa-music"></i>
+                                <span>Your Recording</span>
+                            </div>
+                            <div class="recording-time" id="recording-duration">00:00</div>
+                        </div>
+                        
+                        <div class="audio-visualization">
+                            <div class="audio-spectrum" id="audio-spectrum">
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                                <div class="spectrum-bar"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="player-progress">
+                            <div class="progress-time" id="current-time">00:00</div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-bg"></div>
+                                <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                                <input type="range" class="progress-slider" id="progress-slider" min="0" max="100" value="0">
+                            </div>
+                            <div class="progress-time" id="total-time">00:00</div>
+                        </div>
+                        
+                        <div class="player-controls-new">
+                            <button class="player-btn rewind-btn" id="rewind-btn">
+                                <i class="fas fa-backward"></i>
+                            </button>
+                            <button class="player-btn play-btn" id="play-pause-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="player-btn forward-btn" id="forward-btn">
+                                <i class="fas fa-forward"></i>
+                            </button>
+                            <button class="player-btn download-btn-new" id="download-audio-btn">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <div class="page-title">
+                    <h2>Speech to Text</h2>
+                    <p>Convert spoken words to written text with high accuracy</p>
+                </div>
+                  <!-- Desktop action buttons -->
+                <div class="action-buttons main-actions desktop-only">
+                    <button class="action-btn secondary-btn" id="clear-btn">
+                        <i class="fas fa-trash"></i>
+                        Clear
+                    </button>
+                    <button class="action-btn primary-btn" id="convert-btn">
+                        <i class="fas fa-bolt"></i>
+                        Convert to Text
+                    </button>
+                </div>
+            </div>
+            
+            <div class="content-wrapper">                <!-- Recording section -->
+                <div class="recording-panel">
+                    <button class="record-btn" id="record-btn">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    
+                    <div class="record-status">
+                        <span class="status-indicator"></span>
+                        <span id="status-text">Ready to record</span>
+                    </div>
+                    
+                    <!-- Visualizer inside the recording panel -->
+                    <div class="recording-visualizer" id="visualizer">
+                        <!-- Visualizer bars -->
+                        <div class="visualizer-bar" style="height: 10px;"></div>
+                        <div class="visualizer-bar" style="height: 15px;"></div>
+                        <div class="visualizer-bar" style="height: 25px;"></div>
+                        <div class="visualizer-bar" style="height: 18px;"></div>
+                        <div class="visualizer-bar" style="height: 30px;"></div>
+                        <div class="visualizer-bar" style="height: 22px;"></div>
+                        <div class="visualizer-bar" style="height: 15px;"></div>
+                        <div class="visualizer-bar" style="height: 35px;"></div>
+                        <div class="visualizer-bar" style="height: 28px;"></div>
+                        <div class="visualizer-bar" style="height: 20px;"></div>
+                    </div>
+                </div>
+                  <!-- Mobile action buttons - only visible on mobile -->
+                <div class="action-buttons-container mobile-only">
+                    <button class="mobile-action-btn" id="clear-btn-mobile">
+                        <i class="fas fa-trash"></i>
+                        Clear
+                    </button>
+                    <button class="mobile-action-btn convert" id="convert-btn-mobile">
+                        <i class="fas fa-magic"></i>
+                        Convert
+                    </button>
+                </div>
+                
+                <div class="results-panel">
+                    <div class="results-header">
+                        <div class="results-title">
+                            <i class="fas fa-file-alt"></i>
+                            Transcription Results
+                        </div>
+                        
+                        <div class="results-controls">
+                            <button class="control-btn" id="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="control-btn" id="download-btn" title="Download as text">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="results-content">
+                        <div class="results-empty" id="results-empty">
+                            <i class="fas fa-file-audio"></i>
+                            <p>No transcription yet</p>
+                            <span>Record or upload audio and press the Convert button to see results</span>
+                        </div>
+                        
+                        <div class="transcription-result" id="transcription-result" style="display:none;">
+                            <div class="meta-info">
+                                <div class="service-info">
+                                    <span class="result-timestamp" id="result-timestamp"></span>
+                                </div>
+                                
+                                <div class="word-count-info">
+                                    <span>Words: <span id="word-count">0</span></span>
+                                </div>
+                            </div>
+                            
+                            <div id="transcription-text">
+                                <!-- Transcription text will appear here -->
+                            </div>
+                        </div>
+                        
+                        <div class="error-alert">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span id="error-message">Something went wrong. Please try again.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="voice-wave-container">
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+                <div class="voice-wave-bar"></div>
+            </div>
+            <div class="loading-icon-text">
+                <i class="fas fa-wave-square"></i>
+                <span>Converting speech to text...</span>
+            </div>
+            <div class="loading-text">This may take a few seconds</div>
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const recordOption = document.getElementById('record-option');
+        const uploadOption = document.getElementById('upload-option');
+        const audioFileInput = document.getElementById('audio-file');
+        const recordBtn = document.getElementById('record-btn');
+        const statusText = document.getElementById('status-text');
+        const statusIndicator = document.querySelector('.status-indicator');
+        const convertBtn = document.getElementById('convert-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const resultsEmpty = document.getElementById('results-empty');
+        const transcriptionResult = document.getElementById('transcription-result');
+        const transcriptionText = document.getElementById('transcription-text');
+        const resultTimestamp = document.getElementById('result-timestamp');
+        const wordCount = document.getElementById('word-count');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const errorAlert = document.querySelector('.error-alert');
+        const errorMessage = document.getElementById('error-message');
+        const visualizerBars = document.querySelectorAll('.visualizer-bar');
+        const audioControls = document.getElementById('audio-controls');
+        const audioPlayer = document.getElementById('audio-player');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const progressSlider = document.getElementById('progress-slider');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const currentTime = document.getElementById('current-time');
+        const totalTime = document.getElementById('total-time');
+        const recordingDuration = document.getElementById('recording-duration');
+        const audioSpectrum = document.getElementById('audio-spectrum');
+        const spectrumBars = audioSpectrum.querySelectorAll('.spectrum-bar');
+        const rewindBtn = document.getElementById('rewind-btn');
+        const forwardBtn = document.getElementById('forward-btn');
+        const downloadAudioBtn = document.getElementById('download-audio-btn');
+        const convertBtnMobile = document.getElementById('convert-btn-mobile');
+        const clearBtnMobile = document.getElementById('clear-btn-mobile');
+
+        // API endpoint
+        const API_ENDPOINT = '/transcribe';
+        
+        // Global variables
+        let isRecording = false;
+        let audioBlob;
+        let visualizerAnimation;
+        let spectrumAnimation;
+        let audioContext;
+        let audioStream;
+        let audioRecorder;
+        
+        // Skip forward/backward by 5 seconds
+        const SKIP_TIME = 5;
+        
+        // Utility functions
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return '00:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Initialize Web Audio API for proper WAV recording
+        function createAudioRecorder(stream) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const input = audioContext.createMediaStreamSource(stream);
+            const recorder = new Recorder(input, {
+                numChannels: 1, // Mono recording is more compatible
+                sampleRate: 16000 // 16kHz is better for speech recognition
+            });
+            return recorder;
+        }
+        
+        // Initialize audio visualization
+        function initAudioVisualization() {
+            // Set random heights for spectrum bars for initial state
+            spectrumBars.forEach(bar => {
+                const height = Math.floor(Math.random() * 50) + 10;
+                bar.style.height = `${height}%`;
+            });
+        }
+        
+        // Create animated spectrum effect
+        function animateSpectrum(isPlaying) {
+            if (!isPlaying) return null;
+            
+            return setInterval(() => {
+                spectrumBars.forEach(bar => {
+                    if (Math.random() > 0.5) {
+                        const height = Math.floor(Math.random() * 70) + 20;
+                        bar.style.height = `${height}%`;
+                    }
+                });
+            }, 200);
+        }
+        
+        // Visualizer animation for recording
+        function animateVisualizer(isRecording) {
+            if (isRecording) {
+                const visualizerAnimation = setInterval(() => {
+                    visualizerBars.forEach(bar => {
+                        const randomHeight = Math.floor(Math.random() * 40) + 5;
+                        bar.style.height = `${randomHeight}px`;
+                    });
+                }, 100);
+                
+                return visualizerAnimation;
+            }
+        }
+
+        // Audio player event listeners
+        audioPlayer.addEventListener('play', () => {
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            spectrumAnimation = animateSpectrum(true);
+        });
+        
+        audioPlayer.addEventListener('pause', () => {
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            clearInterval(spectrumAnimation);
+        });
+        
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            totalTime.textContent = formatTime(audioPlayer.duration);
+            recordingDuration.textContent = formatTime(audioPlayer.duration);
+            currentTime.textContent = '00:00';
+            progressSlider.value = 0;
+            progressBarFill.style.width = '0%';
+            
+            // Initialize spectrum visualization
+            initAudioVisualization();
+        });
+        
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (audioPlayer.duration) {
+                const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                progressSlider.value = percent;
+                progressBarFill.style.width = `${percent}%`;
+                currentTime.textContent = formatTime(audioPlayer.currentTime);
+            }
+        });
+        
+        audioPlayer.addEventListener('ended', () => {
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            progressSlider.value = 0;
+            progressBarFill.style.width = '0%';
+            currentTime.textContent = '00:00';
+            clearInterval(spectrumAnimation);
+        });
+        
+        // Control buttons event listeners
+        progressSlider.addEventListener('input', () => {
+            const seekTime = audioPlayer.duration * (progressSlider.value / 100);
+            progressBarFill.style.width = `${progressSlider.value}%`;
+            audioPlayer.currentTime = seekTime;
+            currentTime.textContent = formatTime(seekTime);
+        });
+        
+        playPauseBtn.addEventListener('click', () => {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+            } else {
+                audioPlayer.pause();
+            }
+        });
+        
+        rewindBtn.addEventListener('click', () => {
+            audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - SKIP_TIME);
+        });
+        
+        forwardBtn.addEventListener('click', () => {
+            audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + SKIP_TIME);
+        });
+
+        // Toggle input options
+        recordOption.addEventListener('click', () => {
+            recordOption.classList.add('active');
+            uploadOption.classList.remove('active');
+        });
+        
+        uploadOption.addEventListener('click', () => {
+            uploadOption.classList.add('active');
+            recordOption.classList.remove('active');
+            audioFileInput.click();
+        });
+        
+        // Handle recording
+        recordBtn.addEventListener('click', async () => {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioStream = stream;
+                    
+                    // Create an audio recorder that will generate compatible WAV files
+                    audioRecorder = createAudioRecorder(stream);
+                    
+                    // Start recording
+                    audioRecorder.record();
+                    isRecording = true;
+                    
+                    // Update UI for recording state
+                    recordBtn.innerHTML = '<i class="fas fa-stop"></i>';
+                    recordBtn.classList.add('recording');
+                    statusText.textContent = 'Recording...';
+                    statusIndicator.classList.add('recording');
+                    
+                    // Start visualizer animation
+                    visualizerAnimation = animateVisualizer(true);
+                    
+                } catch (err) {
+                    console.error('Error accessing microphone:', err);
+                    errorMessage.textContent = 'Could not access microphone. Please check permissions.';
+                    errorAlert.style.display = 'flex';
+                    setTimeout(() => {
+                        errorAlert.style.display = 'none';
+                    }, 3000);
+                }
+            } else {
+                // Stop recording
+                audioRecorder.stop();
+                
+                // Generate compatible WAV file
+                audioRecorder.exportWAV(blob => {
+                    audioBlob = blob;
+                    
+                    // Update UI after recording stops
+                    recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                    statusText.textContent = 'Recording saved';
+                    statusIndicator.classList.remove('recording');
+                    recordBtn.classList.remove('recording');
+                    
+                    // Show audio controls and set audio source
+                    audioControls.style.display = 'flex';
+                    audioPlayer.src = URL.createObjectURL(audioBlob);
+                });
+                
+                // Stop all tracks on the stream to release the microphone
+                if (audioStream) {
+                    audioStream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Reset state
+                isRecording = false;
+                clearInterval(visualizerAnimation);
+                
+                // Reset visualizer
+                visualizerBars.forEach(bar => {
+                    bar.style.height = '5px';
+                });
+            }
+        });
+        
+        // Handle file upload
+        audioFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                statusText.textContent = `File selected: ${fileName}`;
+            }
+        });
+        
+        // Convert button - Send to backend API
+        const handleConvert = async () => {
+            // Check if we have audio to process
+            if (!audioBlob && !audioFileInput.files[0]) {
+                errorMessage.textContent = 'Please record or upload audio first.';
+                errorAlert.style.display = 'flex';
+                setTimeout(() => {
+                    errorAlert.style.display = 'none';
+                }, 3000);
+                return;
+            }
+            
+            loadingOverlay.style.display = 'flex';
+            
+            try {
+                let audioToSend;
+                let fileName;
+                
+                if (audioBlob) {
+                    // Create a file from blob with proper WAV extension
+                    fileName = `recording_${new Date().getTime()}.wav`;
+                    audioToSend = new File([audioBlob], fileName, { type: 'audio/wav' });
+                } else {
+                    audioToSend = audioFileInput.files[0];
+                    fileName = audioFileInput.files[0].name;
+                }
+                
+                console.log(`Sending file: ${fileName} (${audioToSend.type}), size: ${audioToSend.size} bytes`);
+                
+                const formData = new FormData();
+                formData.append('file', audioToSend);
+                
+                // Send to backend using the correct endpoint
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    console.error('Server response:', response.status, errorData);
+                    throw new Error(`Server responded with ${response.status}: ${errorData?.detail || 'Unknown error'}`);
+                }
+                
+                const result = await response.json();
+                
+                // Process response
+                loadingOverlay.style.display = 'none';
+                
+                // Update UI with transcription results
+                resultsEmpty.style.display = 'none';
+                transcriptionResult.style.display = 'block';
+
+                // Display transcription text
+                transcriptionText.textContent = result.text || '';
+                // If empty, show a message
+                if (!result.text) {
+                    transcriptionText.textContent = 'No text detected in audio.';
+                }
+                
+                // Update timestamp and word count
+                resultTimestamp.textContent = new Date().toLocaleString();
+                wordCount.textContent = result.text ? result.text.split(/\s+/).filter(Boolean).length : 0;
+                
+            } catch (error) {
+                loadingOverlay.style.display = 'none';
+                console.error('Error processing audio:', error);
+                errorMessage.textContent = error.message || 'Error processing audio. Please try again.';
+                errorAlert.style.display = 'flex';
+                setTimeout(() => {
+                    errorAlert.style.display = 'none';
+                }, 4000);
+            }
+        };
+        
+        // Attach the convert function to both buttons
+        convertBtn.addEventListener('click', handleConvert);
+        convertBtnMobile.addEventListener('click', handleConvert);
+        
+        // Download audio button
+        downloadAudioBtn.addEventListener('click', () => {
+            if (audioBlob) {
+                const url = URL.createObjectURL(audioBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'recording.wav';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+        
+        // Clear button
+        clearBtn.addEventListener('click', () => {
+            // Reset UI
+            resultsEmpty.style.display = 'flex';
+            transcriptionResult.style.display = 'none';
+            audioBlob = null;
+            statusText.textContent = 'Ready to record';
+            audioControls.style.display = 'none';
+            
+            if (audioFileInput.value) {
+                audioFileInput.value = '';
+            }
+        });
+        
+        // Clear button (mobile)
+        clearBtnMobile.addEventListener('click', () => {
+            // Reset UI (same as clearBtn)
+            resultsEmpty.style.display = 'flex';
+            transcriptionResult.style.display = 'none';
+            audioBlob = null;
+            statusText.textContent = 'Ready to record';
+            audioControls.style.display = 'none';
+            
+            if (audioFileInput.value) {
+                audioFileInput.value = '';
+            }
+        });
+        
+        // Copy button
+        copyBtn.addEventListener('click', () => {
+            if (transcriptionText.textContent) {
+                navigator.clipboard.writeText(transcriptionText.textContent)
+                    .then(() => {
+                        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                        setTimeout(() => {
+                            copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                        }, 2000);
+                    });
+            }
+        });
+        
+        // Download button
+        downloadBtn.addEventListener('click', () => {
+            if (transcriptionText.textContent) {
+                const text = transcriptionText.textContent;
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'transcription.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+        
+        // Create floating dots for background
+        const floatingDotsContainer = document.getElementById('floating-dots');
+        
+        // Create and add dots to the container
+        function createFloatingDots() {
+            const dotCount = 80; // More dots for higher density
+            
+            for (let i = 0; i < dotCount; i++) {
+                const dot = document.createElement('div');
+                dot.classList.add('dot');
+                
+                // Smaller size between 2px and 4px
+                const size = Math.floor(Math.random() * 3) + 2;
+                dot.style.width = `${size}px`;
+                dot.style.height = `${size}px`;
+                
+                // Random position
+                const xPos = Math.floor(Math.random() * 100);
+                const yPos = Math.floor(Math.random() * 100);
+                dot.style.left = `${xPos}%`;
+                dot.style.bottom = `${yPos}%`;
+                
+                // White dots with low opacity
+                dot.style.background = 'rgba(255, 255, 255, 0.8)';
+                dot.style.opacity = '0.08';
+                
+                // Random animation duration
+                const animationDuration = Math.floor(Math.random() * 20) + 20;
+                dot.style.animationDuration = `${animationDuration}s`;
+                
+                // Random animation delay
+                const animationDelay = Math.floor(Math.random() * 15);
+                dot.style.animationDelay = `${animationDelay}s`;
+                
+                // Random X movement distance (smaller movements)
+                const xDistance = Math.floor(Math.random() * 100) - 50; // between -50px and 50px
+                dot.style.setProperty('--x-distance', `${xDistance}px`);
+                
+                floatingDotsContainer.appendChild(dot);
+            }
+        }
+        
+        // Create data stream lines
+        function createDataStreams() {
+            const dataStreamContainer = document.querySelector('.data-stream');
+            const streamCount = 15;
+            
+            for (let i = 0; i < streamCount; i++) {
+                const dataLine = document.createElement('div');
+                dataLine.classList.add('data-line');
+                
+                // Random position and timing
+                const yPos = Math.floor(Math.random() * 100);
+                const animationDelay = Math.floor(Math.random() * 8);
+                const animationDuration = Math.floor(Math.random() * 5) + 5;
+                
+                dataLine.style.top = `${yPos}%`;
+                dataLine.style.animationDelay = `${animationDelay}s`;
+                dataLine.style.animationDuration = `${animationDuration}s`;
+                
+                dataStreamContainer.appendChild(dataLine);
+            }
+        }
+        
+        // Call all the background creation functions
+        createFloatingDots();
+        createDataStreams();
+
+        // Add ripple effect and functionality to back button
+        document.querySelector('.back-button').addEventListener('click', function(e) {
+            const button = this;
+            const ripple = document.createElement('div');
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            
+            ripple.style.width = ripple.style.height = `${size/4}px`;
+            ripple.style.left = `${e.clientX - rect.left - size/8}px`;
+            ripple.style.top = `${e.clientY - rect.top - size/8}px`;
+            ripple.classList.add('ripple');
+            
+            button.appendChild(ripple);
+            
+            ripple.addEventListener('animationend', () => {
+                ripple.remove();
+                window.location.href = '/projects';
+            });
+            
+            e.preventDefault();
+        });
+
+        // Mobile version of Clear button
+        clearBtnMobile.addEventListener('click', () => {
+            // Reset UI
+            resultsEmpty.style.display = 'flex';
+            transcriptionResult.style.display = 'none';
+            audioBlob = null;
+            statusText.textContent = 'Ready to record';
+            audioControls.style.display = 'none';
+            
+            if (audioFileInput.value) {
+                audioFileInput.value = '';
+            }
+        });
+
+        // Mobile version of Convert button
+        convertBtnMobile.addEventListener('click', async () => {
+            // Check if we have audio to process
+            if (!audioBlob && !audioFileInput.files[0]) {
+                errorMessage.textContent = 'Please record or upload audio first.';
+                errorAlert.style.display = 'flex';
+                setTimeout(() => {
+                    errorAlert.style.display = 'none';
+                }, 3000);
+                return;
+            }
+            
+            loadingOverlay.style.display = 'flex';
+            
+            try {
+                let audioToSend;
+                let fileName;
+                
+                if (audioBlob) {
+                    // Create a file from blob with proper WAV extension
+                    fileName = `recording_${new Date().getTime()}.wav`;
+                    audioToSend = new File([audioBlob], fileName, { type: 'audio/wav' });
+                } else {
+                    audioToSend = audioFileInput.files[0];
+                    fileName = audioFileInput.files[0].name;
+                }
+                
+                console.log(`Sending file: ${fileName} (${audioToSend.type}), size: ${audioToSend.size} bytes`);
+                
+                const formData = new FormData();
+                formData.append('file', audioToSend);
+                
+                // Send to backend using the correct endpoint
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    console.error('Server response:', response.status, errorData);
+                    throw new Error(`Server responded with ${response.status}: ${errorData?.detail || 'Unknown error'}`);
+                }
+                
+                const result = await response.json();
+                
+                // Process response
+                loadingOverlay.style.display = 'none';
+                
+                // Update UI with transcription results
+                resultsEmpty.style.display = 'none';
+                transcriptionResult.style.display = 'block';
+
+                // Display transcription text
+                transcriptionText.textContent = result.text || '';
+                // If empty, show a message
+                if (!result.text) {
+                    transcriptionText.textContent = 'No text detected in audio.';
+                }
+                
+                // Update timestamp and word count
+                resultTimestamp.textContent = new Date().toLocaleString();
+                wordCount.textContent = result.text ? result.text.split(/\s+/).filter(Boolean).length : 0;
+                
+            } catch (error) {
+                loadingOverlay.style.display = 'none';
+                console.error('Error processing audio:', error);
+                errorMessage.textContent = error.message || 'Error processing audio. Please try again.';
+                errorAlert.style.display = 'flex';
+                setTimeout(() => {
+                    errorAlert.style.display = 'none';
+                }, 4000);
+            }
+        });
+    </script>
+</body>
+</html>
