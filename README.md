@@ -164,31 +164,56 @@ git push -u origin main
 
 ### Vercel Deployment
 
-1. Install the Vercel CLI:
+1. **Prepare for Vercel deployment**:
+   
+   Run the setup script to ensure your project is ready for Vercel:
+   
+   ```bash
+   python vercel_setup.py
+   ```
 
-```bash
-npm install -g vercel
-```
+2. **Via Vercel Dashboard (Recommended)**:
+   
+   - Connect your GitHub repository to Vercel through their web interface
+   - Set "Framework Preset" to "Other"
+   - Set "Build Command" to `python vercel_setup.py`
+   - Set "Output Directory" to `.`
 
-2. Login to Vercel:
+3. **Via Vercel CLI**:
 
-```bash
-vercel login
-```
+   ```bash
+   # Install the CLI
+   npm install -g vercel
+   
+   # Login to Vercel
+   vercel login
+   
+   # Deploy
+   vercel
+   
+   # For production
+   vercel --prod
+   ```
 
-3. Deploy to Vercel:
+### Troubleshooting Vercel 500 Errors
 
-```bash
-vercel
-```
+If you encounter a 500 Internal Server Error on Vercel:
 
-4. For production deployment:
+1. **Check logs in Vercel dashboard**:
+   - Go to your deployment and view "Functions" logs
 
-```bash
-vercel --prod
-```
+2. **Use the debug endpoint**:
+   - Visit `https://your-app.vercel.app/debug` to see server environment info
 
-Alternatively, you can connect your GitHub repository to Vercel through their web interface for automatic deployments.
+3. **Common issues and fixes**:
+   - **Import errors**: Make sure all files are properly imported in main.py and index.py
+   - **Path errors**: Use absolute paths in your code
+   - **Environment variables**: Ensure any required env vars are set in Vercel dashboard
+   - **File permissions**: Vercel has read-only filesystem; don't try to create/write files
+   - **Dependencies**: Verify all required modules are in requirements.txt
+
+4. **Last Resort Fix**:
+   If still facing issues, try simplifying your FastAPI app code by removing complex imports and fallback to basic functionality.
 
 ## Usage
 

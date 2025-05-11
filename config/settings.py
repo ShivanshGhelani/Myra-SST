@@ -31,4 +31,9 @@ AUDIO_DIR = BASE_DIR / 'audio'
 TEMPLATES_DIR = BASE_DIR / 'templates'
 
 # Ensure directories exist
-AUDIO_DIR.mkdir(exist_ok=True)
+try:
+    AUDIO_DIR.mkdir(exist_ok=True)
+except Exception as e:
+    print(f"Warning: Could not create audio directory: {str(e)}")
+    # Don't fail on Vercel where directory creation might be restricted
+    pass
