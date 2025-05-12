@@ -2,8 +2,11 @@ from fastapi import APIRouter, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 import os
 import logging
+from typing import Union
+from pathlib import Path
 from core.speech_recognition import SpeechRecognizer
 from core.file_handler import FileHandler
+from config.settings import USE_MEMORY_STORAGE
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,8 +20,9 @@ file_handler = FileHandler()
 async def transcribe_file(file: UploadFile):
     """
     Endpoint to transcribe an uploaded audio file
+    Works with both file system and memory storage for Vercel compatibility
     """
-    file_path = None
+    file_reference = None
     try:
         if not file_handler.validate_audio_format(file.filename):
             raise HTTPException(
@@ -26,12 +30,12 @@ async def transcribe_file(file: UploadFile):
                 detail="Unsupported file format. Please upload WAV, AIFF, MP3 or FLAC files only."
             )
         
-        # Save the uploaded file
-        file_path = await file_handler.save_upload_file(file)
-        logger.info(f"File saved successfully at: {file_path}")
+        # Save the uploaded file (to memory or disk based on environment)
+        file_reference = await file_handler.save_upload_file(file)
+        logger.info(f"File {'stored in memory' if USE_MEMORY_STORAGE else 'saved to disk'}")
         
         # Transcribe the audio file with enhanced features
-        result = speech_recognizer.transcribe_audio(file_path)
+        result = speech_recognizer.transcribe_audio(file_reference)
         logger.info("Transcription completed successfully")
         
         if result and result.get("text"):
@@ -51,10 +55,10 @@ async def transcribe_file(file: UploadFile):
         logger.error(f"Error processing audio file: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        # Clean up the temporary file
-        if file_path and os.path.exists(file_path):
+        # Clean up the file (either from memory or disk)
+        if file_reference:
             try:
-                os.remove(file_path)
-                logger.info(f"Temporary file removed: {file_path}")
+                FileHandler.cleanup_file(file_reference)
+                logger.info(f"Temporary {'memory' if isinstance(file_reference, str) else 'disk'} file cleaned up")
             except Exception as e:
-                logger.error(f"Error removing temporary file: {str(e)}")
+                logger.error(f"Error cleaning up file: {str(e)}")

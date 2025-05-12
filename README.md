@@ -209,10 +209,15 @@ If you encounter a 500 Internal Server Error on Vercel:
    - **Import errors**: Make sure all files are properly imported in main.py and index.py
    - **Path errors**: Use absolute paths in your code
    - **Environment variables**: Ensure any required env vars are set in Vercel dashboard
-   - **File permissions**: Vercel has read-only filesystem; don't try to create/write files
+   - **Read-only filesystem**: The app now automatically uses in-memory storage on Vercel to avoid file system errors
    - **Dependencies**: Verify all required modules are in requirements.txt
 
-4. **Last Resort Fix**:
+4. **Memory Storage Solution**:
+   - This app now automatically detects Vercel's environment and stores audio files in memory instead of on disk
+   - No code changes are needed as this is handled automatically by the application
+   - If you receive the error "[Errno 30] Read-only file system: '/var/task/audio'", make sure you're using the latest version
+
+5. **Last Resort Fix**:
    If still facing issues, try simplifying your FastAPI app code by removing complex imports and fallback to basic functionality.
 
 ## Usage

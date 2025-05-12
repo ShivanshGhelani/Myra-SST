@@ -1,3 +1,4 @@
+# filepath: s:\Projects\FastAPI\SeperateFolder\MyraSTT\core\file_handler.py
 from pathlib import Path
 import shutil
 import logging
@@ -77,8 +78,10 @@ class FileHandler:
             
         except Exception as e:
             logger.error(f"Error saving upload file: {str(e)}", exc_info=True)
-            # Clean up partial file if it exists
-            if file_path and file_path.exists():
+            # Clean up
+            if memory_key and memory_key in FileHandler.memory_files:
+                FileHandler.memory_files.pop(memory_key, None)
+            if file_path and os.path.exists(file_path):
                 try:
                     file_path.unlink()
                 except Exception as cleanup_error:
@@ -89,6 +92,44 @@ class FileHandler:
                 upload_file.file.close()
             except Exception as e:
                 logger.warning(f"Error closing upload file: {str(e)}")
+    
+    @staticmethod
+    def get_file_content(file_reference: Union[Path, str]) -> Tuple[BinaryIO, bool]:
+        """
+        Get file content either from disk or memory
+        Returns a file-like object and a boolean indicating if it's from memory
+        """
+        try:
+            if isinstance(file_reference, str) and file_reference.startswith('memory_file_'):
+                # It's a memory key
+                if file_reference in FileHandler.memory_files:
+                    content = FileHandler.memory_files[file_reference]
+                    return io.BytesIO(content), True
+                else:
+                    raise ValueError(f"Memory file not found: {file_reference}")
+            else:
+                # It's a file path
+                return open(file_reference, 'rb'), False
+        except Exception as e:
+            logger.error(f"Error retrieving file content: {str(e)}")
+            raise
+    
+    @staticmethod
+    def cleanup_file(file_reference: Union[Path, str]) -> None:
+        """Clean up a file either from disk or memory"""
+        try:
+            if isinstance(file_reference, str) and file_reference.startswith('memory_file_'):
+                # It's a memory key
+                if file_reference in FileHandler.memory_files:
+                    FileHandler.memory_files.pop(file_reference, None)
+                    logger.info(f"Memory file cleaned up: {file_reference}")
+            else:
+                # It's a file path
+                if os.path.exists(file_reference):
+                    os.remove(file_reference)
+                    logger.info(f"Disk file cleaned up: {file_reference}")
+        except Exception as e:
+            logger.error(f"Error cleaning up file: {str(e)}")
     
     @staticmethod
     def validate_audio_format(filename: str) -> bool:

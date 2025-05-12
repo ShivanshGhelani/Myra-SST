@@ -85,12 +85,14 @@ Solutions:
 
 #### File System Issues
 
-Symptom: "Permission denied" errors
+Symptom: Errors like "[Errno 30] Read-only file system: '/var/task/audio'"
 
-Solution:
-- Vercel has a read-only file system
-- Remove any code that tries to write files
-- Use environment variables instead of config files
+Solutions:
+- Vercel has a read-only file system - no writing to the filesystem is allowed
+- The application now automatically uses in-memory storage when running on Vercel
+- The `USE_MEMORY_STORAGE` flag in settings.py controls this behavior
+- All file operations in FileHandler.py will use memory instead of the filesystem
+- No code changes are needed as this is handled automatically
 
 #### Static Files Not Found
 

@@ -62,8 +62,7 @@ vercel_config = {
             "src": "index.py",
             "use": "@vercel/python"
         }
-    ],
-    "routes": [
+    ],    "routes": [
         {
             "src": "/static/(.*)",
             "dest": "/static/$1"
@@ -72,7 +71,12 @@ vercel_config = {
             "src": "/(.*)",
             "dest": "/index.py"
         }
-    ]
+    ],
+    "env": {
+        "VERCEL": "1",
+        "DEBUG": "true",
+        "USE_MEMORY_STORAGE": "true"
+    }
 }
 
 with open('vercel.json', 'w') as f:
