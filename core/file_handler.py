@@ -101,3 +101,12 @@ class FileHandler:
         if not is_valid:
             logger.warning(f"Unsupported audio format: {filename}")
         return is_valid
+
+    @staticmethod
+    def get_memory_file(memory_key: str) -> io.BytesIO:
+        """
+        Retrieve an in-memory file as a file-like object.
+        """
+        if memory_key not in FileHandler.memory_files:
+            raise FileNotFoundError(f"Memory file with key {memory_key} not found")
+        return io.BytesIO(FileHandler.memory_files[memory_key])

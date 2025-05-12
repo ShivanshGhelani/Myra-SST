@@ -18,24 +18,35 @@ class SpeechRecognizer:
     def transcribe_audio(self, audio_file_path: Union[str, Path]) -> Dict[str, str]:
         """
         Transcribe an audio file to text in any language with confidence score.
+        Handles both file paths and in-memory files.
         """
         try:
-            with sr.AudioFile(str(audio_file_path)) as source:
+            if isinstance(audio_file_path, str) and audio_file_path.startswith("memory_file_"):
+                # Handle in-memory file
+                from core.file_handler import FileHandler
+                audio_file = FileHandler.get_memory_file(audio_file_path)
+                audio_file.seek(0)
+                source = sr.AudioFile(audio_file)
+            else:
+                # Handle file path
+                source = sr.AudioFile(str(audio_file_path))
+
+            with source as audio_source:
                 logger.info(f"Processing audio file: {audio_file_path}")
                 try:
                     # Adjust for ambient noise before processing
-                    self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
-                    audio_data = self.recognizer.record(source)
+                    self.recognizer.adjust_for_ambient_noise(audio_source, duration=0.5)
+                    audio_data = self.recognizer.record(audio_source)
                 except Exception as e:
                     logger.error(f"Error reading audio file: {str(e)}")
                     raise ValueError(f"Failed to process audio file: {str(e)}")
-                
+
                 # Try multiple recognition services in order of reliability
                 services = [
                     (self.try_google_recognition, "Google Speech Recognition"),
                     (self.try_sphinx_recognition, "Sphinx (Offline)"),
                 ]
-                
+
                 last_error = None
                 for recognition_func, service_name in services:
                     try:
@@ -64,7 +75,7 @@ class SpeechRecognizer:
                 error_msg = last_error or "Could not recognize speech using any available service"
                 logger.error(f"All transcription services failed: {error_msg}")
                 raise ValueError(error_msg)
-                
+
         except Exception as e:
             logger.error(f"Error processing {audio_file_path}: {str(e)}", exc_info=True)
             raise
