@@ -314,21 +314,17 @@
             overflow: hidden;
             position: relative;
             z-index: 1;
-        }
-
-        /* Sidebar */
+        }        /* Sidebar */
         .sidebar {
             background: rgba(15, 23, 42, 0.7);
-            padding: 24px;
+            padding: 20px;
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
-        }
-
-        .app-logo {
+        }        .app-logo {
             display: flex;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
         
         .logo-icon {
@@ -365,11 +361,10 @@
         .input-methods {
             flex: 1;
         }
-        
-        .section-title {
+          .section-title {
             font-size: 14px;
             font-weight: 500;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             color: var(--text-secondary);
             display: flex;
             align-items: center;
@@ -379,13 +374,11 @@
             margin-right: 8px;
             font-size: 16px;
             color: var(--accent);
-        }
-
-        .input-option {
+        }        .input-option {
             background: rgba(51, 65, 85, 0.4);
             border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
+            padding: 14px;
+            margin-bottom: 12px;
             cursor: pointer;
             transition: all 0.2s ease;
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -400,11 +393,10 @@
             background: rgba(109, 40, 217, 0.2);
             border: 1px solid rgba(109, 40, 217, 0.4);
         }
-        
-        .input-option-header {
+          .input-option-header {
             display: flex;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         
         .input-icon {
@@ -440,17 +432,15 @@
             font-size: 12px;
             color: var(--text-secondary);
         }
-        
-        .settings-section {
+          .settings-section {
             margin-top: auto;
-            padding-top: 20px;
+            padding-top: 16px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
-        .api-selector {
+          .api-selector {
             display: flex;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
         
         .api-selector label {
@@ -482,21 +472,17 @@
             font-family: 'Font Awesome 5 Free';
             font-weight: 900;
             margin-left: 8px;
-        }
-
-        /* Main content */
+        }        /* Main content */
         .main-content {
-            padding: 24px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-        }
-
-        .content-header {
+        }.content-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
         
         .page-title h2 {
@@ -552,20 +538,18 @@
            2. Recording panel
            3. Convert and Clear buttons below recording
            4. Results panel (output) at bottom
-        */
-        .content-wrapper {
+        */        .content-wrapper {
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 20px; /* Increased from 16px for better spacing */
             flex: 1;
             overflow: hidden;
         }
-        
-        .recording-panel {
+          .recording-panel {
             background: rgba(30, 41, 59, 0.5);
             border-radius: 16px;
-            padding: 24px;
-            height: 200px;
+            padding: 20px;
+            height: 180px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -573,6 +557,7 @@
             position: relative;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
         }
         
         .recording-visualizer {
@@ -629,9 +614,8 @@
             70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
-        
-        .record-status {
-            margin-top: 16px;
+          .record-status {
+            margin-top: 12px;
             font-size: 14px;
             color: var(--text-secondary);
             display: flex;
@@ -648,160 +632,101 @@
         
         .status-indicator.recording {
             background: var(--danger);
-        }
-
-        .results-panel {
+        }        .results-panel {
             background: rgba(30, 41, 59, 0.5);
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.05);
-            flex: 1;
+            flex: 1 1 auto; /* Changed to 1 1 auto to allow better growth */
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            max-height: 400px; /* Increased from 280px */
+            min-height: 200px; /* Increased from 160px */
+            transition: all 0.3s ease;
         }
-        
-        .results-header {
-            padding: 16px 24px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          .results-header {
+            padding: 16px 20px; /* Increased from 12px vertical padding */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: space-between;
-        }
-        
-        .results-title {
-            font-size: 18px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .results-title i {
-            color: var(--accent);
-        }
-        
-        .results-controls {
-            display: flex;
-            gap: 12px;
-        }
-        
-        .control-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background: rgba(51, 65, 85, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .control-btn:hover {
-            background: rgba(51, 65, 85, 0.6);
+            flex-shrink: 0;
+            background: rgba(15, 23, 42, 0.3); /* Added subtle background */
         }
         
         .results-content {
-            padding: 24px;
+            padding: 0; /* Remove padding from container */
             overflow-y: auto;
             flex: 1;
-            /* Add min-height for better visibility */
-            min-height: 120px;
-            max-height: 300px;
-            overflow-y: auto;
         }
-        
-        .results-empty {
-            height: 100%;
+
+        .transcription-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .transcription-result {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 20px;
+            transition: background-color 0.2s ease;
         }
-        
-        .results-empty i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
+
+        .transcription-result:hover {
+            background: rgba(51, 65, 85, 0.8);
         }
-        
-        .results-empty p {
-            font-size: 16px;
-            font-weight: 500;
+
+        .transcription-result:last-child {
+            border-bottom: none;
         }
-        
-        .results-empty span {
-            font-size: 14px;
-            opacity: 0.7;
-            margin-top: 8px;
-            text-align: center;
-            max-width: 300px;
-        }
-        
-        .transcription-result {
-            background: rgba(51, 65, 85, 0.85); /* More solid for contrast */
-            border-radius: 12px;
-            padding: 20px 18px;
-            line-height: 1.7;
-            border: 1px solid rgba(255, 255, 255, 0.10);
-            font-size: 1.08rem;
-            color: #fff;
-            margin-top: 10px;
-            word-break: break-word;
-            white-space: pre-line;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-        
-        .meta-info {
+
+        .result-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
+            padding-bottom: 0; /* Remove bottom padding */
+            border-bottom: none; /* Remove border */
         }
-        
-        .service-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+
+        .transcription-text {
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 1rem;
+            padding-left: 28px; /* Add indent for better readability */
+            position: relative;
         }
-        
-        .service-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            background: rgba(79, 70, 229, 0.2);
-            font-size: 12px;
-            font-weight: 500;
-            color: var (--secondary);
+
+        .transcription-text::before {
+            content: '●';
+            position: absolute;
+            left: 8px;
+            color: var(--accent);
+            opacity: 0.5;
+            font-size: 0.8rem;
         }
-        
-        .confidence-info {
-            font-size: 14px;
+
+        .timestamp {
+            font-size: 0.85rem;
             color: var(--text-secondary);
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
-        .confidence-meter {
-            width: 100px;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            overflow: hidden;
-            position: relative;
+
+        .word-count {
+            background: rgba(79, 70, 229, 0.15);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--accent);
         }
-        
-        .confidence-bar {
-            position: absolute;
-            height: 100%;
-            background: linear-gradient(to right, var(--primary), var(--accent));
-            border-radius: 3px;
-            width: 0;
-        }
-        
+
         .loading-overlay {
             position: absolute;
             top: 0;
@@ -1554,7 +1479,8 @@
                 background: rgba(30, 41, 59, 0.5);
                 border: 1px solid rgba(255, 255, 255, 0.05);
             }
-              .results-header {
+            
+            .results-header {
                 padding: 12px 15px;
                 background: rgba(15, 23, 42, 0.4);
                 border-top-left-radius: 12px;
@@ -2140,10 +2066,12 @@
             
             .results-content {
                 padding: 16px;
+                max-height: none;
                 flex: 1;
                 overflow-y: auto;
             }
-              /* Simplified audio player for mobile */
+            
+            /* Simplified audio player for mobile */
             .audio-controls {
                 margin: 0 0 15px;
                 width: 100%;
@@ -2182,56 +2110,53 @@
             }
         }
         
-        /* Even smaller screens */
-        @media (max-width: 400px) {
-            .recording-panel {
-                flex-direction: column;
-                height: auto;
-                padding: 8px;
+        /* Empty state styles */
+        .results-empty {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.2);
+            border-radius: 12px;
+            margin: 20px;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .results-empty i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+            color: var(--accent);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .results-empty p {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--text), var(--text-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .results-empty span {
+            font-size: 14px;
+            opacity: 0.8;
+            line-height: 1.6;
+            max-width: 400px;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
             }
-            
-            .record-btn {
-                margin-right: 0;
-                margin-bottom: 8px;
-                width: 50px;
-                height: 50px;
-            }
-            
-            .record-status {
-                align-items: center;
-            }
-            
-            .sidebar-actions .action-btn {
-                padding: 10px 3px;
-                min-height: 40px;
-            }
-            
-            .input-option {
-                padding: 6px;
-            }
-            
-            .input-icon {
-                width: 30px;
-                height: 30px;
-                min-width: 30px;
-            }
-            
-            .audio-controls {
-                margin-top: 5px;
-            }
-            
-            /* Completely flatten sidebar items */
-            .input-option-header {
-                justify-content: flex-start;
-            }
-            
-            .input-option-title h3 {
-                font-size: 11px;
-                margin-bottom: 2px;
-            }
-            
-            .input-option-title p {
-                font-size: 8px;
+            50% {
+                transform: translateY(-10px);
             }
         }
     </style>
@@ -2447,21 +2372,23 @@
                             <span>Record or upload audio and press the Convert button to see results</span>
                         </div>
                         
-                        <div class="transcription-result" id="transcription-result" style="display:none;">
-                            <div class="meta-info">
-                                <div class="service-info">
-                                    <span class="result-timestamp" id="result-timestamp"></span>
+                        <ul class="transcription-list">
+                            <li class="transcription-result" id="transcription-result" style="display:none;">
+                                <div class="meta-info">
+                                    <div class="service-info">
+                                        <span class="result-timestamp" id="result-timestamp"></span>
+                                    </div>
+                                    
+                                    <div class="word-count-info">
+                                        <span>Words: <span id="word-count">0</span></span>
+                                    </div>
                                 </div>
                                 
-                                <div class="word-count-info">
-                                    <span>Words: <span id="word-count">0</span></span>
+                                <div id="transcription-text">
+                                    <!-- Transcription text will appear here -->
                                 </div>
-                            </div>
-                            
-                            <div id="transcription-text">
-                                <!-- Transcription text will appear here -->
-                            </div>
-                        </div>
+                            </li>
+                        </ul>
                         
                         <div class="error-alert">
                             <i class="fas fa-exclamation-circle"></i>

@@ -4,9 +4,29 @@ import os
 import logging
 from typing import Union
 from pathlib import Path
-from core.speech_recognition import SpeechRecognizer
-from core.file_handler import FileHandler
-from config.settings import USE_MEMORY_STORAGE
+
+# Add debugging for imports
+print("speech.py: Starting imports...")
+try:
+    from core.speech_recognition import SpeechRecognizer
+    print("speech.py: Successfully imported SpeechRecognizer")
+except Exception as e:
+    print(f"speech.py: Failed to import SpeechRecognizer: {e}")
+    SpeechRecognizer = None
+
+try:
+    from core.file_handler import FileHandler
+    print("speech.py: Successfully imported FileHandler")
+except Exception as e:
+    print(f"speech.py: Failed to import FileHandler: {e}")
+    FileHandler = None
+
+try:
+    from config.settings import USE_MEMORY_STORAGE
+    print("speech.py: Successfully imported USE_MEMORY_STORAGE")
+except Exception as e:
+    print(f"speech.py: Failed to import USE_MEMORY_STORAGE: {e}")
+    USE_MEMORY_STORAGE = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
